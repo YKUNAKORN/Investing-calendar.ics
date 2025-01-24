@@ -1,7 +1,7 @@
 from datetime import datetime
 
 # ฟังก์ชันสร้างไฟล์ .ics
-def create_ics(events, filename='calendar.ics'):
+def create_ics(events, filename='moveToiCalendar.ics'):
     with open(filename, 'w') as f:
         f.write("BEGIN:VCALENDAR\n")
         f.write("VERSION:2.0\n")
