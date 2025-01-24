@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import pytz
 
 # ฟังก์ชันสร้างไฟล์ .ics
 def create_ics(events, filename='moveToiCalendar.ics'):
@@ -9,27 +8,25 @@ def create_ics(events, filename='moveToiCalendar.ics'):
         f.write("PRODID:-//Your Company//NONSGML v1.0//EN\n")
 
         for event in events:
-            # แปลงเวลาเป็น UTC
-            local = pytz.timezone("Asia/Bangkok")  # เปลี่ยนเป็น Time Zone ที่ใช้งาน
-            start_time = local.localize(datetime.strptime(event['date'] + " " + event['time'], '%Y-%m-%d %H:%M'))
-            start = start_time.astimezone(pytz.utc).strftime('%Y%m%dT%H%M%SZ')
-            end = (start_time + timedelta(hours=1)).astimezone(pytz.utc).strftime('%Y%m%dT%H%M%SZ')  # เหตุการณ์ยาว 1 ชั่วโมง
+            # แปลงเวลาและวันที่
+            start_time = datetime.strptime(event['date'] + " " + event['time'], '%Y-%m-%d %H:%M')
+            start = start_time.strftime('%Y%m%dT%H%M%S')
+            end = (start_time + timedelta(hours=1)).strftime('%Y%m%dT%H%M%S')  # สมมติว่าเหตุการณ์ยาว 1 ชั่วโมง
 
-            # เขียนข้อมูลเหตุการณ์ในไฟล์ .ics
             f.write("BEGIN:VEVENT\n")
             f.write(f"UID:{start}@yourdomain.com\n")
             f.write(f"SUMMARY:{event['title']}\n")
-            f.write(f"DTSTART:{start}\n")
-            f.write(f"DTEND:{end}\n")
+            f.write(f"DTSTART:{start}Z\n")
+            f.write(f"DTEND:{end}Z\n")
             f.write("LOCATION:Online\n")
             f.write("END:VEVENT\n")
 
         f.write("END:VCALENDAR\n")
 
-# ตัวอย่างข้อมูลเหตุการณ์
+# ตัวอย่างข้อมูลจาก WebScraping
 events = [
-    {'title': 'GDP Report', 'time': '10:00', 'date': '2025-01-24'},
-    {'title': 'Inflation Data', 'time': '12:00', 'date': '2025-01-24'}
+    {'title': 'GDP Report', 'time': '10:00', 'date': '2025-01-30'},  # ตัวอย่างวันที่ล่วงหน้า
+    {'title': 'Inflation Data', 'time': '12:00', 'date': '2025-01-31'}
 ]
 
 # สร้างไฟล์ .ics
