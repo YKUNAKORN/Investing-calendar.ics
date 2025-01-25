@@ -2,26 +2,29 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
-# URL ของหน้าเว็บที่มีข้อมูล
+# URL data source
 url = "https://sslecal2.investing.com"
 
-# ส่ง request และดึง HTML
+# sent request and response HTML
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 
-# ดึงข้อมูลเหตุการณ์
+# get events
 events = []
 for event in soup.select('.event_row'):
+    country = event.select_one('.event_country').text.strip()
+    importance = len(event.select('.event_importance .icon-star-full'))  
     title = event.select_one('.event_name').text.strip()
-    time = event.select_one('.event_time').text.strip()
-    date = event.select_one('.event_date').text.strip()  # ดึงวันที่โดยตรง (สมมติว่าเว็บมีข้อมูลวันที่)
+    time_utc = event.select_one('.event_time').text.strip()
 
-    # แปลงวันที่ที่ดึงมาให้อยู่ในรูปแบบ datetime
-    event_date = datetime.strptime(date, '%Y-%m-%d')
-    today = datetime.today()
+    # Flitering only Country : United States, importance = 3 
+    if country == "United States" and importance == 3:
+        # set timezone
+        event_time = datetime.strptime(time_utc, '%H:%M') + timedelta(hours=7)
+        formatted_time = event_time.strftime('%H:%M')
+        formatted_date = datetime.now().strftime('%Y-%m-%d')  
 
-    # ตรวจสอบว่า Event เกิดขึ้นในอีก 7 วันข้างหน้า
-    if today <= event_date <= (today + timedelta(days=7)):
-        events.append({'title': title, 'time': time, 'date': date})
+        # collect the event data
+        events.append({'title': title, 'time': formatted_time, 'date': formatted_date})
 
 print(events)
