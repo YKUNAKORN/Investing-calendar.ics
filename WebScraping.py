@@ -17,7 +17,7 @@ for event in soup.select('.event_row'):
     title = event.select_one('.event_name').text.strip()
     time_utc = event.select_one('.event_time').text.strip()
 
-    # Flitering only Country : United States, importance = 3 
+    # Sort by only Country : United States, importance = 3 
     if country == "United States" and importance == 3:
         # set timezone
         event_time = datetime.strptime(time_utc, '%H:%M') + timedelta(hours=7)
