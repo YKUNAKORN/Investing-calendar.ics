@@ -30,4 +30,4 @@ events = [
 
 # create the .ics file
 create_ics(events)
-print("ไฟล์ .ics ถูกสร้างแล้ว!")
+print(".ics file has been created!")
