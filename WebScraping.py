@@ -1,30 +1,55 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from ics import Calendar, Event
+import pytz
 
-# URL data source
-url = "https://sslecal2.investing.com"
-
-# sent request and response HTML
-response = requests.get(url)
-soup = BeautifulSoup(response.text, 'html.parser')
-
-# get events
+URL = "https://www.investing.com/economic-calendar/"
+HEADERS = { "User-Agent": "Mozilla/5.0" }
+res = requests.get(URL, headers=HEADERS)
+soup = BeautifulSoup(res.text, "html.parser")
+table = soup.select_one("#economicCalendarData")
+tz = pytz.timezone("Asia/Bangkok")
 events = []
-for event in soup.select('.event_row'):
-    country = event.select_one('.event_country').text.strip()
-    importance = len(event.select('.event_importance .icon-star-full'))  
-    title = event.select_one('.event_name').text.strip()
-    time_utc = event.select_one('.event_time').text.strip()
 
-    # Sort by only Country : United States, importance = 3 
-    if country == "United States" and importance == 3:
-        # set timezone
-        event_time = datetime.strptime(time_utc, '%H:%M') + timedelta(hours=7)
-        formatted_time = event_time.strftime('%H:%M')
-        formatted_date = datetime.now().strftime('%Y-%m-%d')  
+for row in table.select("tr"):
+    try:
+        time = row.select_one(".time")
+        cur = row.select_one(".currency")
+        imp = row.select_one(".sentiment")
+        event = row.select_one(".event")
 
-        # collect the event data
-        events.append({'title': title, 'time': formatted_time, 'date': formatted_date})
+        if not (time and cur and imp and event):
+            continue
+        if cur.get_text(strip = True) != "USD":
+            continue
+        stars = len(imp.select("i.grayFullBullishIcon"))
+        if stars < 3:
+            continue
+        eventName = event.get_text(strip = True)
+        timeStr = time.get_text(strip = True)
+        if not timeStr:
+            continue
 
-print(events)
+        eventT = datetime.strptime(timeStr, "%H:%M")
+        now = datetime.now(tz)
+        eventTime = tz.localize(datetime.combine(now.date(), eventT.time()))
+        events.append((eventTime, eventName))
+
+    except Exception as e:
+        continue
+
+calen = Calendar()
+
+for evTime, evName in events:
+    e = Event()
+    e.name = evName
+    e.begin = evTime
+    e.end = evTime + timedelta(hours = 1)  
+    e.description = "USD High Impact Event"
+    calen.events.add(e)
+
+with open("economic_calendar.ics", "w", encoding="utf-8") as f:
+    f.writelines(calen)
+
+print("economic_calendar.ics generated successfully")
